@@ -10,6 +10,8 @@ $config['session_lifetime'] = 30;  	// 30 min
 $config['default_host'] = 'localhost';
 $config['smtp_server'] = 'localhost';
 $config['smtp_port'] = 25;
+$config['smtp_user'] = '';     
+$config['smtp_pass'] = '';     
 $config['product_name'] = 'Roundcube Webmail';
 $config['des_key'] = 'SuperGeheim2345678901234'; // must be 24 characters
 

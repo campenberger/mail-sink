@@ -1,53 +1,33 @@
 mail-sink
 =========
 
+I created mail-sink to simplify email testing and to make sure no unintended emails go out. mail-sink is based
+on smpt-sink from the Postfix project, the Dovecot IMAP server, Roundcube, and lighttpd. Everything is built on 
+top of Alpine 3.16 and PHP 8. supervisord is the glue to mentioned all the projects in one container and logpipe
+is used th get the lighttpd logs into the supervisord admin console.
+
+
 mail-sink is a test container for email testing. It emulates a very dump smtp server that listens by default on 25, 
 accepts all emails regardless of where they go and stores them away. It also runs an IMAP server on port 143 and 
-webserver with the roundcube webmail application to access those emails. 
+webserver with the roundcube webmail application to access those emails. Roundcube is the excpetion, because its log
+end up in /home/roundcube/logs and not supervisord.'
 
-The login for the webmail application and for imap:
+These ports are exposed by the container:
 
-* user: smtp
-* password: Geheim
-
-The webmail application should only used by one user at a time, because the underlying sqlite database does not scale.
-
-All server processes in this container are managed by a supervisord, which starts the daemos, captures their log
-output and restarts them as neccessary. It also has a simple UI to check on the status of the processes. Roundcube writes
-to a logs file in /home/roundcube/logs and no output will show up in supervisord.
-
-Logs from the other servers can be observed in the supervisor UI on port 9001. However due to the broken logging in lighttpd,
-the processes logs are sent to the logpipe process and visilbe there.
-
-The container exposes the following ports:
-
-* 9001: supervisor
 *   25: smtp
-*  143: imap
 *   80: roundcube
+*  143: imap
+* 9001: supervisor
 
-The container also exposes the following volumes. They can be mounted to local directoris, but are not neccessary to
-run the container.
+To login for Roundcube and IMAP is smtp / Geheim.
 
-* /home/smtp/MailDir - directory in standard MailDir format that contains all received emails
-* /home/roundcube - The roundcube working files, with the sqlite databse and folders for logs and temp files
-
-When used the mountpoints need to have read/write permissions for uid=102 & gid=105.
-
-By the default the container will start the supervisor and start all processes. It can also be run with sh to enter
-a shell for troubleshooting. At a minimum port 80 should be mapped to access the Roundcube web client and port 25 should
-be accessible to the email sources, either through a mapped port or container linking. The following creates the mail 
-directory and makes it accessible to the world, before launching the container with all ports mapped to the local 
-machine.
+The container's default entry point starts supervisord, which in turn launches all the child processed mentioned
+above:
 
 ```
-  mkdir MailDir
-  chhmod 0777 MailDir
-  docker build -t mail-sink .
-  docker run -i --rm --tty -p 9001:9001 -p 2525:25 -p 1143:143 -p 8080:80 -v $(pwd)/MailDir:/home/smtp/MailDir mail-sink
+# Lunch the container. Supervisord is available at http://localhost:9001/ and Roundcube at 
+# http://localhost:8080/. Email can be sent to port 2525 and the imap server listens
+# at port 1143.
+docker run --rm -p 9001:9001 -p 2525:25 -p 1143:143 -p 8080:80  mail-sink
 ```
 
-Todo
-====
-* rebase & PR
-* build
